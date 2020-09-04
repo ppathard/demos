@@ -1,0 +1,36 @@
+# create another namespace, create a secret in that namespace.
+# kubectl create namespace ops
+# kubectl create secret generic dev-db-secret --from-literal=username=devuser --from-literal=password='S!B\*d$zDsb=' -n ops
+# kubectl get secret -n ops
+# kubectl --kubeconfig sa.kubeconfig get secrets -n ops # Error
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: secret-reader
+rules:
+- apiGroups: [""]
+  #
+  # at the HTTP level, the name of the resource for accessing Secret
+  # objects is "secrets"
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+# This cluster role binding allows serviceaccount to read secrets in any namespace.
+kind: ClusterRoleBinding
+metadata:
+  name: read-secrets-global
+subjects:
+- kind: ServiceAccount
+  name: example-reader # Name is case sensitive
+  apiGroup: ""
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: secret-reader
+  apiGroup: rbac.authorization.k8s.io
+# If you use RoleBinding to bind the service account to this ClusterRole (using the previously example), 
+# the service account will only be able to view pods in the respective namespace.
+
